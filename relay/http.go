@@ -195,6 +195,9 @@ func (b *simplePoster) post(buf []byte, query string, auth string, location stri
 		return nil, err
 	}
 
+	var str string = string(data[:])
+	fmt.Println(str)
+
 	if err = resp.Body.Close(); err != nil {
 		return nil, err
 	}
@@ -241,8 +244,8 @@ func (b *simplePoster) get(buf []byte, query string, auth string, location strin
 	if err != nil {
 		return nil, err
 	}
-	var str string = string(data[:])
-	fmt.Println(str)
+	// var str string = string(data[:])
+	// fmt.Println(str)
 	if err = resp.Body.Close(); err != nil {
 		return nil, err
 	}
@@ -392,29 +395,18 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// 	log.Fatal(err1)
 			// }
 			// fmt.Println(host1)
-			var db_name = strings.Split(query, "=")[1]
-			dest_host, err := h.ct.Get(db_name)
+			var dbName = strings.Split(query, "=")[1]
+			destHost, err := h.ct.Get(dbName)
 			if err != nil {
 				return
 			}
 			b := b
-			if b.name != dest_host {
+			if b.name != destHost {
 				return
 			} else {
 				fmt.Println("ss")
 			}
 
-			// b.poster.data.location = b.poster.data.location
-			// b.poster.location = b.poster.location + r.URL.Path
-			// if r.Method != "POST" {
-			// 	w.Header().Set("Allow", "POST")
-			// 	if r.Method == "OPTIONS" {
-			// 		w.WriteHeader(http.StatusNoContent)
-			// 	} else {
-			// 		jsonError(w, http.StatusMethodNotAllowed, "invalid write method")
-			// 	}
-			// 	return
-			// }
 			var location string
 			if r.URL.Path == "/write" || r.URL.Path == "/query" {
 				location = b.location + r.URL.Path
@@ -453,7 +445,8 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		for resp := range responses {
 			switch resp.StatusCode / 100 {
 			case 2:
-				w.WriteHeader(http.StatusNoContent)
+				// w.WriteHeader(http.StatusNoContent)
+				resp.Write(w)
 				return
 
 			case 4:
@@ -476,18 +469,17 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		errResponse.Write(w)
 	} else if r.Method == "GET" {
-		// queryParams := r.URL.Query()
-		// bd, _ := ioutil.ReadAll(r.Body)
-		// fmt.Fprintf(w, "%s", bd)
-		// r.ParseForm()
-
-		fmt.Println(r.FormValue("q"))
-		// fmt.Println(r.FormValue("db"))
-		r.ParseMultipartForm(1024)
-		fmt.Println(r.Form.Get("db"))
-		dbName := r.Form.Get("db")
-		q := r.Form.Get("q")
-		// queryParams := r.URL.Query()
+		// fmt.Println(r.FormValue("q"))
+		// // fmt.Println(r.FormValue("db"))
+		// r.ParseMultipartForm(1024)
+		// fmt.Println(r.Form.Get("db"))
+		// dbName := r.Form.Get("db")
+		// q := r.Form.Get("q")
+		// http://127.0.0.1:9096/query?db=example&q=SELECT * FROM cpu_load_short
+		queryParams := r.URL.Query()
+		fmt.Println(queryParams)
+		dbName := queryParams.Get("db")
+		q := queryParams.Get("q")
 		// fail early if we're missing the database
 		if dbName == "" {
 			jsonError(w, http.StatusBadRequest, "missing parameter: db")
@@ -533,7 +525,7 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// 	return
 		// }
 
-		outBuf := getBuf()
+		// outBuf := getBuf()
 		// for _, p := range points {
 		// 	if _, err = outBuf.WriteString(p.PrecisionString(precision)); err != nil {
 		// 		break
@@ -542,9 +534,6 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// 		break
 		// 	}
 		// }
-		// json.Marshal(cmd)
-		// test_body := bytes.NewBuffer(b)
-		// outBuf.WriteString()
 
 		// done with the input points
 		// putBuf(bodyBuf)
@@ -557,7 +546,7 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// normalize query string
 		// query := queryParams.Encode()
-		outBytes := outBuf.Bytes()
+		// outBytes := outBuf.Bytes()
 
 		// check for authorization performed via the header
 		authHeader := r.Header.Get("Authorization")
@@ -568,18 +557,6 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var responses = make(chan *responseData, len(h.backends))
 
 		for _, b := range h.backends {
-			// host, err := c.Get("cpu_usage")
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
-			// fmt.Println(host)
-
-			// host1, err1 := c.Get("mem_usage")
-			// if err1 != nil {
-			// 	log.Fatal(err1)
-			// }
-			// fmt.Println(host1)
-			// var db_name = strings.Split(q, "=")[1]
 			destHost, err := h.ct.Get(dbName)
 			if err != nil {
 				return
@@ -591,17 +568,6 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("ss")
 			}
 
-			// b.poster.data.location = b.poster.data.location
-			// b.poster.location = b.poster.location + r.URL.Path
-			// if r.Method != "POST" {
-			// 	w.Header().Set("Allow", "POST")
-			// 	if r.Method == "OPTIONS" {
-			// 		w.WriteHeader(http.StatusNoContent)
-			// 	} else {
-			// 		jsonError(w, http.StatusMethodNotAllowed, "invalid write method")
-			// 	}
-			// 	return
-			// }
 			var location string
 			if r.URL.Path == "/write" || r.URL.Path == "/query" {
 				location = b.location + r.URL.Path
@@ -612,8 +578,8 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			go func() {
 				defer wg.Done()
 				// var resp *responseData
-				resp, err := b.get(outBytes, q, authHeader, location)
-				fmt.Println(outBytes)
+				resp, err := b.get(nil, q, authHeader, location)
+				// fmt.Println(outBytes)
 				fmt.Println(q)
 				fmt.Println(authHeader)
 				// fmt.Println(resp)
@@ -632,7 +598,7 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			wg.Wait()
 			close(responses)
-			putBuf(outBuf)
+			// putBuf(outBuf)
 		}()
 
 		var errResponse *responseData
@@ -669,15 +635,6 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		errResponse.Write(w)
 	}
-	// 	w.Header().Set("Allow", "POST")
-	// 	if r.Method == "OPTIONS" {
-	// 		w.WriteHeader(http.StatusNoContent)
-	// 	} else {
-	// 		jsonError(w, http.StatusMethodNotAllowed, "invalid write method")
-	// 	}
-	// 	return
-	// }
-
 }
 
 func jsonError(w http.ResponseWriter, code int, message string) {
