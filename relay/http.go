@@ -220,7 +220,8 @@ func (b *simplePoster) get(buf []byte, query string, auth string, location strin
 	// p.Add("q", "SELECT * FROM cpu_load_short")
 	// HttpGet get = new HttpGet(URLEncoder.encode(url,"UTF-8"));
 	// encodeurl := url.QueryEscape(location + "?db=example&q=SELECT%20*%20FROM%20cpu_load_short")
-	req, err := http.NewRequest("GET", location+"?db=example&q=SELECT%20*%20FROM%20cpu_load_short", nil)
+	fmt.Println(location)
+	req, err := http.NewRequest("GET", location, nil)
 	// req, err := http.NewRequest("GET", location+"?q='SELECT * FROM cpu_load_short'", nil)
 	//req, err := http.NewRequest("GET", location, bytes.NewReader(buf))
 	if err != nil {
@@ -316,10 +317,10 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		queryParams := r.URL.Query()
 
 		// fail early if we're missing the database
-		if queryParams.Get("db") == "" {
-			jsonError(w, http.StatusBadRequest, "missing parameter: db")
-			return
-		}
+		// if queryParams.Get("db") == "" {
+		// 	jsonError(w, http.StatusBadRequest, "missing parameter: db")
+		// 	return
+		// }
 
 		if queryParams.Get("rp") == "" && h.rp != "" {
 			queryParams.Set("rp", h.rp)
@@ -402,14 +403,30 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			b := b
 			if b.name != destHost {
-				return
+				fmt.Printf("b.name is [%s] dest host is [%s]", b.name, destHost)
+				continue
 			} else {
-				fmt.Println("ss")
+				fmt.Printf("db name is [%s]. dest host is [%s]", dbName, destHost)
 			}
 
 			var location string
 			if r.URL.Path == "/write" || r.URL.Path == "/query" {
 				location = b.location + r.URL.Path
+				if r.URL.Path == "/query" {
+					location = location + "?"
+
+					for k, v := range queryParams {
+						fmt.Println(k)
+						fmt.Println(v)
+						location = location + k + "=" + v[0] + "&"
+					}
+					location = location[:len(location)-1]
+					fmt.Println(location)
+					location = strings.Replace(location, " ", "%20", -1)
+					fmt.Println(location)
+					// location = location +
+					// +"?db=example&q=SELECT%20*%20FROM%20cpu_load_short"
+				}
 			} else {
 				return
 			}
@@ -481,13 +498,13 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		dbName := queryParams.Get("db")
 		q := queryParams.Get("q")
 		// fail early if we're missing the database
-		if dbName == "" {
-			jsonError(w, http.StatusBadRequest, "missing parameter: db")
-			return
-		}
+		// if dbName == "" {
+		// 	jsonError(w, http.StatusBadRequest, "missing parameter: db")
+		// 	return
+		// }
 
 		if q == "" {
-			jsonError(w, http.StatusBadRequest, "missing parameter: db")
+			jsonError(w, http.StatusBadRequest, "missing parameter: q")
 			return
 		}
 
@@ -505,48 +522,6 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			defer b.Close()
 			// body = b
 		}
-		// fmt.Println(r.GetBody())
-		// bodyBuf := getBuf()
-		// _, err := bodyBuf.ReadFrom(body)
-		// if err != nil {
-		// 	putBuf(bodyBuf)
-		// 	jsonError(w, http.StatusInternalServerError, "problem reading request body")
-		// 	return
-		// }
-		// // outBytes1 := bodyBuf.Bytes()
-		// fmt.Println(bodyBuf.String())
-
-		// precision := queryParams.Get("precision")
-		// fmt.Println(precision)
-		// points, err := models.ParsePointsWithPrecision(bodyBuf.Bytes(), start, precision)
-		// if err != nil {
-		// 	putBuf(bodyBuf)
-		// 	jsonError(w, http.StatusBadRequest, "unable to parse points")
-		// 	return
-		// }
-
-		// outBuf := getBuf()
-		// for _, p := range points {
-		// 	if _, err = outBuf.WriteString(p.PrecisionString(precision)); err != nil {
-		// 		break
-		// 	}
-		// 	if err = outBuf.WriteByte('\n'); err != nil {
-		// 		break
-		// 	}
-		// }
-
-		// done with the input points
-		// putBuf(bodyBuf)
-
-		// if err != nil {
-		// 	putBuf(outBuf)
-		// 	jsonError(w, http.StatusInternalServerError, "problem writing points")
-		// 	return
-		// }
-
-		// normalize query string
-		// query := queryParams.Encode()
-		// outBytes := outBuf.Bytes()
 
 		// check for authorization performed via the header
 		authHeader := r.Header.Get("Authorization")
@@ -563,14 +538,27 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			b := b
 			if b.name != destHost {
-				return
+				fmt.Printf("b.name is [%s] dest host is [%s]", b.name, destHost)
+				continue
 			} else {
-				fmt.Println("ss")
+				fmt.Printf("db name is [%s]. dest host is [%s]", dbName, destHost)
 			}
 
 			var location string
 			if r.URL.Path == "/write" || r.URL.Path == "/query" {
 				location = b.location + r.URL.Path
+				if r.URL.Path == "/query" {
+					location = location + "?"
+
+					for k, v := range queryParams {
+						fmt.Println(k)
+						fmt.Println(v)
+						location = location + k + "=" + v[0] + "&"
+					}
+					location = location[:len(location)-1]
+					location = strings.Replace(location, " ", "%20", -1)
+					fmt.Println(location)
+				}
 			} else {
 				return
 			}
@@ -580,10 +568,9 @@ func (h *HTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				// var resp *responseData
 				resp, err := b.get(nil, q, authHeader, location)
 				// fmt.Println(outBytes)
-				fmt.Println(q)
-				fmt.Println(authHeader)
+				// fmt.Println(q)
+				// fmt.Println(authHeader)
 				// fmt.Println(resp)
-
 				if err != nil {
 					log.Printf("Problem posting to relay %q backend %q: %v", h.Name(), b.name, err)
 				} else {

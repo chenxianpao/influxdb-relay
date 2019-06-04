@@ -5,3 +5,5 @@ output = [
     { name="local1", location = "http://127.0.0.1:8086" },
     { name="local2", location = "http://127.0.0.1:9086" },
 ]
+
+# http://127.0.0.1:9096/query?db=example&q=SELECT * FROM cpu_load_short
